@@ -14,10 +14,10 @@ services:
     ports:
       - "5672:5672" # rabbitMQ default port
       - "15672:15672" # UI를 위한 port
-    # expose:
-    #   - "15672"
-    # networks:
-    # - rabbitmq_network
+    expose:
+      - "15672"
+    networks:
+    - rabbitmq_network
 
   # Django container
   django:
@@ -78,8 +78,8 @@ services:
     # command: celery -A ainterview worker -l info -P eventlet
     depends_on: # django 컨테이너 먼저 실행되도록 의존성 설정
       - django
-#     networks:
-#     - rabbitmq_network
+    networks:
+    - rabbitmq_network
 
-# networks:
-#   rabbitmq_network:
+networks:
+  rabbitmq_network:

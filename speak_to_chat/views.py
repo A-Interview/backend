@@ -27,6 +27,7 @@ from django.http import HttpResponse
 from django.http import JsonResponse
 
 from .tasks import process_whisper_data
+from .gpt_answer import add_gptanswer
 
 load_dotenv()
 openai.api_key = os.getenv("GPT_API_KEY")
@@ -122,10 +123,9 @@ class DefaultInterview(APIView):
         # transcript = openai.Audio.transcribe("whisper-1", audio_file)
         # transcription = transcript["text"]
 
-
-        # delay() : 비동기적으로 작업을 생성하고 celery 메시지 큐에 추가
-        transcription = process_whisper_data.delay()
-		# transcription = process_whisper_data.apply_async(각종 조건)
+        # delay() : celery 작업 즉, 비동기적으로 작업 예
+		# delay() 함수를 통해 tasks.py의 process_whisper_data를 실행
+        # transcription = process_whisper_data.delay()
 
         # 답변 테이블에 추가
         question_object = Question.objects.get(question_id=question_id)
@@ -157,7 +157,9 @@ class DefaultInterview(APIView):
         answer = answer_object.content
         
         # gpt 모범 답변 튜닝 및 생성
-        gpt_answer = self.add_gptanswer(question, answer)
+        # gpt_answer = self.add_gptanswer(question, answer)
+        gpt_answer = add_gptanswer(question, answer)
+        
         
         # gpt 모범 답변 객체 생성
         gpt_object = GPTAnswer.objects.create(question_id=question_object, content=gpt_answer)
@@ -209,53 +211,6 @@ class DefaultInterview(APIView):
                         You must speak only in Korean during the interview.] personality_interview("5")'
             }
         )
-    
-    # gpt 모범 답변 튜닝 및 생성
-    def add_gptanswer(self, question, answer):
-        prompt = []
-        message = f"""Improve the answers to the following interview questions with better answers.\
-            I will provide you with input forms including "question", "answer".\
-            Look at the questions and answers below and make a better answer by correcting or adding any deficiencies in the answers\
-            Don't change the content of the answer completely, but modify it to the extent that it improves.\
-            Never say anything about the questions and answers below.\
-            Don't write "Question" or "Answer"\
-            Don't write about the question below.\
-            Say it in Korean
-            Question: `{question}`\
-            Answer: `{answer}`"""
-        
-        # message = '''Improve the answers to the following interview questions with better answers.\
-        #     I will provide you with input forms including "question", "answer".\
-        #     Look at the questions and answers below and make a better answer by correcting or adding any deficiencies in the answers\
-        #     Don't change the content of the answer completely, but modify it to the extent that it improves.\
-        #     Never say anything about the questions and answers below.\
-        #     Don't write about the question below.\
-        #     Say it in Korean'''
-        
-        # prompt.append(
-        #     {
-        #         "role": "user",
-        #         "content": 'function_name: [gpt_answer] input: ["question", "answer", "number_of_questions"] rule: [Improve the answers to the following interview questions with better answers. I will provide you with input forms including "question", "answer". Look at the questions and answers below and make a better answer by correcting or adding any deficiencies in the answers. Do not change the content of the answer completely, but modify it to the extent that it improves. Never say anything about the questions and answers below. Do not write about the question below. Say it in Korean"]'
-        #         + "gpt_answer(question="
-        #         + question
-        #         + ", answer="
-        #         + answer
-        #         + ")"
-        #     }
-        # )
-        prompt.append(
-            {
-                "role": "user",
-                "content": message
-            }
-        )
-        
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=prompt, temperature=0.7, n=1
-        )
-
-        message = completion.choices[0].message["content"]
-        return message
     
     # 질문과 대답 추가
     def add_question_answer(self, question, answer):
@@ -348,18 +303,18 @@ class SituationInterview(APIView):
     def post(self, request, format=None):
         # 답변을 받고, 응답을 해주는 부분 -> 음성 파일 추출 필요
         # 오디오 파일, 지원 정보 아이디, 질문 아이디를 Request Body로 받음
-        # self.conversation = []
-        # audio_file = request.FILES["voice_file"]
-        # form_id = request.data["form_id"]
-        # question_id = request.data["question_id"]
-        # transcript = openai.Audio.transcribe("whisper-1", audio_file)
-        # transcription = transcript["text"]
+        self.conversation = []
+        audio_file = request.FILES["voice_file"]
+        form_id = request.data["form_id"]
+        question_id = request.data["question_id"]
+        transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        transcription = transcript["text"]
 
         # S3에 업로드하는 로직 필요!
         
         # delay() : celery 작업 즉, 비동기적으로 작업 예
 		# delay() 함수를 통해 tasks.py의 process_whisper_data를 실행
-        transcription = process_whisper_data.delay()
+        # transcription = process_whisper_data.delay()
 
         # 답변 테이블에 추가
         question_object = Question.objects.get(question_id=question_id)
@@ -391,7 +346,8 @@ class SituationInterview(APIView):
         answer = answer_object.content
         
         # gpt 모범 답변 튜닝 및 생성
-        gpt_answer = self.add_gptanswer(question, answer)
+        # gpt_answer = self.add_gptanswer(question, answer)
+        gpt_answer = add_gptanswer(question, answer)
         
         # gpt 모범 답변 객체 생성
         gpt_object = GPTAnswer.objects.create(question_id=question_object, content=gpt_answer)
@@ -433,34 +389,171 @@ class SituationInterview(APIView):
                 + ")"
             }
         )
-        
-    # gpt 모범 답변 튜닝 및 생성
-    def add_gptanswer(self, question, answer):
-        prompt = []
-        message = f"""Improve the answers to the following interview questions with better answers.\
-            I will provide you with input forms including "question", "answer".\
-            Look at the questions and answers below and make a better answer by correcting or adding any deficiencies in the answers\
-            Don't change the content of the answer completely, but modify it to the extent that it improves.\
-            Never say anything about the questions and answers below.\
-            Don't write "Question" or "Answer"\
-            Don't write about the question below.\
-            Say it in Korean
-            Question: `{question}`\
-            Answer: `{answer}`"""
-        
-        prompt.append(
-            {
-                "role": "user",
-                "content": message
-            }
+
+# 상황 부여 면접
+class SituationInterview(APIView):
+    conversation = []
+    # 처음 데이터를 받아야 하는 경우 -> 음성 데이터는 없음. 그냥 GPT 질문 시작.
+    @swagger_auto_schema(
+        operation_description="상황 면접 데이터 최초 받기",
+        operation_id="form_id를 입력해주세요.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="form_id",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+                description="form_id",
+            )
+        ],
+        responses={"200": ResponseVoiceSerializer},
+    )
+
+    def get(self, request):
+        form_id = request.GET.get("form_id")
+        # Question 테이블에 데이터 추가, form Object 얻기
+        form_object = Form.objects.get(id=form_id)
+
+        # 기본 튜닝
+        self.default_tuning(
+            form_object.sector_name,
+            form_object.job_name,
+            form_object.career,
         )
+
+        # 대화 계속하기
+        message = self.continue_conversation()
+
+        Question.objects.create(content=message, form_id=form_object)
+
+        return Response(message, status=status.HTTP_200_OK)
+
+    # 음성 데이터를 받아야 하는 경우
+
+    @swagger_auto_schema(
+        operation_description="음성 데이터 POST",
+        operation_id="음성 파일을 업로드 해주세요.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="form_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+                description="지원 정보 아이디",
+            ),
+            openapi.Parameter(
+                name="question_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+                description="질문 아이디",
+            ),
+            openapi.Parameter(
+                name="voice_file",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+                description="음성 데이터",
+            ),
+        ],
+        responses={400: "Invalid data in uploaded file", 200: "Success"},
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+        parser_classes=(MultiPartParser,),
+        name="upload-voice-file",
+        url_path="upload-voice-file",
+    )
+    def post(self, request, format=None):
+        # 답변을 받고, 응답을 해주는 부분 -> 음성 파일 추출 필요
+        # 오디오 파일, 지원 정보 아이디, 질문 아이디를 Request Body로 받음
+        self.conversation = []
+        audio_file = request.FILES["voice_file"]
+        form_id = request.data["form_id"]
+        question_id = request.data["question_id"]
+        transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        transcription = transcript["text"]
+
+        # S3에 업로드하는 로직 필요!
         
+        # delay() : celery 작업 즉, 비동기적으로 작업 예
+		# delay() 함수를 통해 tasks.py의 process_whisper_data를 실행
+        # transcription = process_whisper_data.delay()
+
+        # 답변 테이블에 추가
+        question_object = Question.objects.get(question_id=question_id)
+        Answer.objects.create(content=transcription, question_id=question_object)
+
+        form_object = Form.objects.get(id=form_id)
+        questions = form_object.questions.all()
+
+        # 기본 튜닝
+        self.default_tuning(
+            form_object.sector_name,
+            form_object.job_name,
+            form_object.career,
+        )
+
+        try:
+            # 질문, 대답 추가.
+            for question in questions:
+                answer = question.answer
+                self.add_question_answer(question.content, answer.content)
+        except:
+            error_message = "같은 지원 양식의 question 테이블과 answer 테이블의 갯수가 일치하지 않습니다."
+            response = HttpResponse(error_message, status=500)
+            return response
+        
+        # =========================gpt_answer===============================      
+        # 질문, 답변 텍스트 가져오기
+        question = question_object.content
+        answer = answer_object.content
+        
+        # gpt 모범 답변 튜닝 및 생성
+        # gpt_answer = self.add_gptanswer(question, answer)
+        gpt_answer = add_gptanswer(question, answer)
+        
+        # gpt 모범 답변 객체 생성
+        gpt_object = GPTAnswer.objects.create(question_id=question_object, content=gpt_answer)
+        # =========================gpt_answer===============================
+
+        message = self.continue_conversation()
+
+        # 질문 테이블에 정보 추가
+        Question.objects.create(content=message, form_id=form_object)
+
+        return Response(message, status=status.HTTP_200_OK)
+
+    # 질문과 대답 추가
+    def add_question_answer(self, question, answer):
+        self.conversation.append({"role": "assistant", "content": question})
+        self.conversation.append({"role": "assistant", "content": answer})
+
+    def continue_conversation(self):
         completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=prompt, temperature=0.7, n=1
+            model="gpt-3.5-turbo", messages=self.conversation, temperature=0.9, n=1
         )
 
         message = completion.choices[0].message["content"]
         return message
+
+    # 기본 튜닝
+    def default_tuning(self, seletor_name, job_name, career):
+        # 대화 시작 메시지 추가
+        self.conversation.append(
+            {
+                "role": "user",
+                "contenet": 'function_name: [situation_interview] input: ["sector", "job", "career"] rule: [You are an expert in recruitment and interviewer specializing in finding the best talent. Ask questions that can judge my ability to cope with situations based “job” that I’ll provide and ask once at a time. For example, you would be ask such as "You have been assigned to work on a project where the design team has provided you with a visually appealing but intricate UI design for a web page. As you start implementing it, you realize that some of the design elements may not be feasible to achieve with the current technology or may negatively impact the performance. How would you handle this situation?" You should ask the next question only after I have answered to the question. Never ask a question similar to the previous one include example that i provide. Do not include any explanations or additional information in your response, simply provide a question in korean. Do not say anything other than a question.]'
+                + "situation_interview(Company="
+                + seletor_name
+                + ", Job="
+                + job_name
+                + ", Career="
+                + career
+                + ")"
+            }
+        )
 
 
 # 심층 면접 인터뷰
@@ -543,17 +636,17 @@ class DeepInterview(APIView):
         # 답변을 받고, 응답을 해주는 부분 -> 음성 파일 추출 필요
         # 오디오 파일, 지원 정보 아이디, 질문 아이디를 Request Body로 받음
         self.conversation = []
-        # audio_file = request.FILES["voice_file"]
-        # form_id = request.data["form_id"]
-        # question_id = request.data["question_id"]
-        # transcript = openai.Audio.transcribe("whisper-1", audio_file)
-        # transcription = transcript["text"]
+        audio_file = request.FILES["voice_file"]
+        form_id = request.data["form_id"]
+        question_id = request.data["question_id"]
+        transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        transcription = transcript["text"]
 
         # S3에 업로드하는 로직 필요!
         
         # delay() : celery 작업 즉, 비동기적으로 작업 예
 		# delay() 함수를 통해 tasks.py의 process_whisper_data를 실행
-        transcription = process_whisper_data.delay()
+        # transcription = process_whisper_data.delay()
 
         # 답변 테이블에 추가
         question_object = Question.objects.get(question_id=question_id)
@@ -586,7 +679,8 @@ class DeepInterview(APIView):
         answer = answer_object.content
         
         # gpt 모범 답변 튜닝 및 생성
-        gpt_answer = self.add_gptanswer(question, answer)
+        # gpt_answer = self.add_gptanswer(question, answer)
+        gpt_answer = add_gptanswer(question, answer)
         
         # gpt 모범 답변 객체 생성
         gpt_object = GPTAnswer.objects.create(question_id=question_object, content=gpt_answer)
@@ -632,34 +726,6 @@ class DeepInterview(APIView):
                 + "agressive_position()",
             }
         )
-    
-    # gpt 모범 답변 튜닝 및 생성
-    def add_gptanswer(self, question, answer):
-        prompt = []
-        message = f"""Improve the answers to the following interview questions with better answers.\
-            I will provide you with input forms including "question", "answer".\
-            Look at the questions and answers below and make a better answer by correcting or adding any deficiencies in the answers\
-            Don't change the content of the answer completely, but modify it to the extent that it improves.\
-            Never say anything about the questions and answers below.\
-            Don't write "Question" or "Answer"\
-            Don't write about the question below.\
-            Say it in Korean
-            Question: `{question}`\
-            Answer: `{answer}`"""
-        
-        prompt.append(
-            {
-                "role": "user",
-                "content": message
-            }
-        )
-        
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=prompt, temperature=0.7, n=1
-        )
-
-        message = completion.choices[0].message["content"]
-        return message
 
 
 # 성향(인성) 면접 인터뷰
@@ -738,17 +804,17 @@ class PersonalityInterview(APIView):
     def post(self, request, format=None):
         # 답변을 받고, 응답을 해주는 부분 -> 음성 파일 추출 필요
         # 오디오 파일, 지원 정보 아이디, 질문 아이디를 Request Body로 받음
-        # audio_file = request.FILES["voice_file"]
-        # form_id = request.data["form_id"]
-        # question_id = request.data["question_id"]
-        # transcript = openai.Audio.transcribe("whisper-1", audio_file)
-        # transcription = transcript["text"]
+        audio_file = request.FILES["voice_file"]
+        form_id = request.data["form_id"]
+        question_id = request.data["question_id"]
+        transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        transcription = transcript["text"]
 
         # S3에 업로드하는 로직 필요!
         
         # delay() : celery 작업 즉, 비동기적으로 작업 예
 		# delay() 함수를 통해 tasks.py의 process_whisper_data를 실행
-        transcription = process_whisper_data.delay()
+        # transcription = process_whisper_data.delay()
 
         # 답변 테이블에 추가
         question_object = Question.objects.get(question_id=question_id)
@@ -772,7 +838,8 @@ class PersonalityInterview(APIView):
         answer = answer_object.content
         
         # gpt 모범 답변 튜닝 및 생성
-        gpt_answer = self.add_gptanswer(question, answer)
+        # gpt_answer = self.add_gptanswer(question, answer)
+        gpt_answer = add_gptanswer(question, answer)
         
         # gpt 모범 답변 객체 생성
         gpt_object = GPTAnswer.objects.create(question_id=question_object, content=gpt_answer)
@@ -809,34 +876,6 @@ class PersonalityInterview(APIView):
     def continue_conversation(self):
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo", messages=self.conversation, temperature=0.9, n=1
-        )
-
-        message = completion.choices[0].message["content"]
-        return message
-    
-    # gpt 모범 답변 튜닝 및 생성
-    def add_gptanswer(self, question, answer):
-        prompt = []
-        message = f"""Improve the answers to the following interview questions with better answers.\
-            I will provide you with input forms including "question", "answer".\
-            Look at the questions and answers below and make a better answer by correcting or adding any deficiencies in the answers\
-            Don't change the content of the answer completely, but modify it to the extent that it improves.\
-            Never say anything about the questions and answers below.\
-            Don't write "Question" or "Answer"\
-            Don't write about the question below.\
-            Say it in Korean
-            Question: `{question}`\
-            Answer: `{answer}`"""
-        
-        prompt.append(
-            {
-                "role": "user",
-                "content": message
-            }
-        )
-        
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=prompt, temperature=0.7, n=1
         )
 
         message = completion.choices[0].message["content"]
