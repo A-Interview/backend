@@ -117,8 +117,8 @@ class DefaultInterview(APIView):
 
         # # 음성 답변 받기
         # audio_file = request.FILES["voice_file"]
-        # form_id = request.data["form_id"]
-        # question_id = request.data["question_id"]
+        form_id = request.data["form_id"]
+        question_id = request.data["question_id"]
         # # 음성 -> 텍스트
         # transcript = openai.Audio.transcribe("whisper-1", audio_file)
         # transcription = transcript["text"]
