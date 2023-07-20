@@ -125,7 +125,7 @@ class DefaultInterview(APIView):
 
         # delay() : celery 작업 즉, 비동기적으로 작업 예
 		# delay() 함수를 통해 tasks.py의 process_whisper_data를 실행
-        # transcription = process_whisper_data.delay()
+        transcription = process_whisper_data.delay()
 
         # 답변 테이블에 추가
         question_object = Question.objects.get(question_id=question_id)
@@ -304,17 +304,17 @@ class SituationInterview(APIView):
         # 답변을 받고, 응답을 해주는 부분 -> 음성 파일 추출 필요
         # 오디오 파일, 지원 정보 아이디, 질문 아이디를 Request Body로 받음
         self.conversation = []
-        audio_file = request.FILES["voice_file"]
-        form_id = request.data["form_id"]
-        question_id = request.data["question_id"]
-        transcript = openai.Audio.transcribe("whisper-1", audio_file)
-        transcription = transcript["text"]
+        # audio_file = request.FILES["voice_file"]
+        # form_id = request.data["form_id"]
+        # question_id = request.data["question_id"]
+        # transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        # transcription = transcript["text"]
 
         # S3에 업로드하는 로직 필요!
         
         # delay() : celery 작업 즉, 비동기적으로 작업 예
 		# delay() 함수를 통해 tasks.py의 process_whisper_data를 실행
-        # transcription = process_whisper_data.delay()
+        transcription = process_whisper_data.delay()
 
         # 답변 테이블에 추가
         question_object = Question.objects.get(question_id=question_id)
@@ -469,17 +469,17 @@ class SituationInterview(APIView):
         # 답변을 받고, 응답을 해주는 부분 -> 음성 파일 추출 필요
         # 오디오 파일, 지원 정보 아이디, 질문 아이디를 Request Body로 받음
         self.conversation = []
-        audio_file = request.FILES["voice_file"]
-        form_id = request.data["form_id"]
-        question_id = request.data["question_id"]
-        transcript = openai.Audio.transcribe("whisper-1", audio_file)
-        transcription = transcript["text"]
+        # audio_file = request.FILES["voice_file"]
+        # form_id = request.data["form_id"]
+        # question_id = request.data["question_id"]
+        # transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        # transcription = transcript["text"]
 
         # S3에 업로드하는 로직 필요!
         
         # delay() : celery 작업 즉, 비동기적으로 작업 예
 		# delay() 함수를 통해 tasks.py의 process_whisper_data를 실행
-        # transcription = process_whisper_data.delay()
+        transcription = process_whisper_data.delay()
 
         # 답변 테이블에 추가
         question_object = Question.objects.get(question_id=question_id)
@@ -636,17 +636,17 @@ class DeepInterview(APIView):
         # 답변을 받고, 응답을 해주는 부분 -> 음성 파일 추출 필요
         # 오디오 파일, 지원 정보 아이디, 질문 아이디를 Request Body로 받음
         self.conversation = []
-        audio_file = request.FILES["voice_file"]
-        form_id = request.data["form_id"]
-        question_id = request.data["question_id"]
-        transcript = openai.Audio.transcribe("whisper-1", audio_file)
-        transcription = transcript["text"]
+        # audio_file = request.FILES["voice_file"]
+        # form_id = request.data["form_id"]
+        # question_id = request.data["question_id"]
+        # transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        # transcription = transcript["text"]
 
         # S3에 업로드하는 로직 필요!
         
         # delay() : celery 작업 즉, 비동기적으로 작업 예
 		# delay() 함수를 통해 tasks.py의 process_whisper_data를 실행
-        # transcription = process_whisper_data.delay()
+        transcription = process_whisper_data.delay()
 
         # 답변 테이블에 추가
         question_object = Question.objects.get(question_id=question_id)
@@ -804,17 +804,17 @@ class PersonalityInterview(APIView):
     def post(self, request, format=None):
         # 답변을 받고, 응답을 해주는 부분 -> 음성 파일 추출 필요
         # 오디오 파일, 지원 정보 아이디, 질문 아이디를 Request Body로 받음
-        audio_file = request.FILES["voice_file"]
-        form_id = request.data["form_id"]
-        question_id = request.data["question_id"]
-        transcript = openai.Audio.transcribe("whisper-1", audio_file)
-        transcription = transcript["text"]
+        # audio_file = request.FILES["voice_file"]
+        # form_id = request.data["form_id"]
+        # question_id = request.data["question_id"]
+        # transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        # transcription = transcript["text"]
 
         # S3에 업로드하는 로직 필요!
         
         # delay() : celery 작업 즉, 비동기적으로 작업 예
 		# delay() 함수를 통해 tasks.py의 process_whisper_data를 실행
-        # transcription = process_whisper_data.delay()
+        transcription = process_whisper_data.delay()
 
         # 답변 테이블에 추가
         question_object = Question.objects.get(question_id=question_id)

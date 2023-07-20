@@ -3,83 +3,79 @@ version: "3"
 
 # 띄울 컨테이너 목록
 services:
-  # RabbitMQ
-  rabbitmq:
-    container_name: rabbitmq_service
-    image: rabbitmq:3.7.14-management-alpine # 웹 UI management 툴 포함
-    # 환경변수 설정
-    environment:
-      - RABBITMQ_USER=guest
-      - RABBITMQ_PASSWORD=guest
-    ports:
-      - "5672:5672" # rabbitMQ default port
-      - "15672:15672" # UI를 위한 port
-    expose:
-      - "15672"
-    networks:
-    - rabbitmq_network
-
-  # Django container
-  django:
+  mysql:
+    image: mysql:8
     env_file:
       - ./.env
-
-    # django 라는 이름으로 로컬에 이미지를 저장
-    # -> django의 프로젝트 명으로 바꿈
-    image: django
-    # docker build 옵션
-    build:
-      # docker build 명령어를 실행할 디렉토리 경로
-      context: .
-      # 지정할 Dockerfile 경로
-      dockerfile: ./dockerfile
-    # 컨테이너 명
-    container_name: django_service
-    # 환경 변수 설정
+    container_name: ainterview_db
+    ports:
+      - "3305:3306"
     environment:
+      MYSQL_DATABASE: ${MYSQL_NAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    # 가상 네트워크 연결
+    networks:
+      - ai_net
+
+  backend:
+    env_file:
+      - ./.env
+    image: backend
+    build:
+      # context : 현재 폴더에 있는 도커파일을 쓰겠다.
+      context: .
+      dockerfile: dockerfile
+    container_name: backend_service
+    volumes:
+      - .:/app
+    # command : 컨테이너가 띄워질 때 실행하는 명령어 / 서버실행
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    restart: on-failure
+    ports:
+      - 8000:8000
+    # 가상 네트워크 연결
+    links:
+      - mysql:mysql
+    networks:
+      - ai_net
+
+  rabbitmq:
+    image: rabbitmq:3.7-management
+    container_name: rabbitmq_service
+    ports:
+      # Expose the port for the worker to add/get tasks
+      - 5672:5672
+      # OPTIONAL: Expose the GUI port
+      - 15672:15672
+    expose:
+      - 5672
+    environment:
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
-      - RABBITMQ_HOST=rabbitmq
-    # 현재 디렉토리를 컨테이너 내의 /home/에 mount
-    volumes:
-      - ./:/home/
-    # 작업 폴더 지정
-    working_dir: /home/
-    # 실행할 명령어
-    command: >
-      bash -c "python manage.py migrate && python manage.py runserver"
-    # 호스트 OS와 컨테이너의 포트를 바인딩
-    ports:
-      - "8000:8000"
-    # 호스트 OS에 포트를 공개하지 않고 컨테이너만 포트를 공개 (현재는 주석)
-    #expose :
-    #  - "8000"
-    # 컨테이너를 실행하는 종속성을 정의
-    depends_on: # rabbitmq 컨테이너 먼저 실행되도록 의존성 설정
-      - rabbitmq
-    # networks:
-    # - rabbitmq_network
+    depends_on:
+      - backend
+    networks:
+      - ai_net
 
-      # Celery
   celery:
     container_name: celery_service
-    # django에서 로컬에 저장한 django 이미지를 재사용
-    image: django
+    build:
+      context: .
+      dockerfile: dockerfile
     environment:
-      - RABBITMQ_USER=guest
-      - RABBITMQ_PASSWORD=guest
-      - RABBITMQ_HOST=rabbitmq
-    volumes:
-      - ./:/home/
-    working_dir: /home/
-    # Celery Worker 실행
-    # command: celery -A ainterview worker --loglevel=info --pool=solo # 단일 프로세스 실행 모드(동기 실행 non_blocking)
-    command: celery -A ainterview worker -l info -P gevent # 비동기 I/O를 지원하는 라이브러리 / greenlet이라는 가벼운 쓰레드를 사용하여 비동기 작업을 처리
-    # command: celery -A ainterview worker -l info -P eventlet
-    depends_on: # django 컨테이너 먼저 실행되도록 의존성 설정
-      - django
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+    # command: sh -c "celery -A ainterview worker -l info --pool=solo"
+    command: sh -c "celery -A ainterview worker -l info"
+    
     networks:
-    - rabbitmq_network
+      - ai_net
+    depends_on:
+      - rabbitmq
+      - backend
 
 networks:
-  rabbitmq_network:
+  ai_net:
+    driver: bridge
