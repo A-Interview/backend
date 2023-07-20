@@ -93,26 +93,26 @@ WSGI_APPLICATION = "ainterview.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.mysql",
-#         # "ENGINE": "mysql.connector.django",
-#         "NAME": os.environ.get("MYSQL_NAME"),
-#         "USER": "root",
-#         "PASSWORD": os.environ.get("MYSQL_ROOT_PASSWORD"),
-#         #"HOST": "localhost",
-#         # docker-compose 사용 시 사용
-#         "HOST": "127.0.0.1", # host에는 컨테이너 이름이 아닌 이미지 이름을 적어야 함(출처:gpt)
-#         "PORT": os.environ.get("MYSQL_PORT"),
-#     }
-# }
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        # "ENGINE": "mysql.connector.django",
+        "NAME": os.environ.get("MYSQL_NAME"),
+        "USER": "root",
+        "PASSWORD": os.environ.get("MYSQL_ROOT_PASSWORD"),
+        #"HOST": "localhost",
+        # docker-compose 사용 시 사용
+        "HOST": "127.0.0.1", # host에는 컨테이너 이름이 아닌 이미지 이름을 적어야 함(출처:gpt)
+        "PORT": os.environ.get("MYSQL_PORT"),
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
