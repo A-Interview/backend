@@ -34,7 +34,7 @@ class FormsAllView(APIView):
     # 사용자 지원정보 전체조회
     @swagger_auto_schema(
         manual_parameters=[parameter_token],
-        operation_id="사용자의 지원정보 전체조회"
+        operation_id="사용자의 지원정보 전체조회",
     )
     def get(self, request):
         data = Form.objects.all()

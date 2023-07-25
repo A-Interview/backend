@@ -26,3 +26,5 @@ class FormsPutSerializer(serializers.ModelSerializer):
     class Meta:
         model = Form
         fields = ("sector_name", "job_name", "career", "resume")
+
+
