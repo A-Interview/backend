@@ -15,3 +15,18 @@ class Form(models.Model):
     deleted_at = models.DateTimeField(blank=True, null=True)
     def __str__(self):
         return f"{self.job_name} in {self.sector_name}"
+
+class Qes_Num(models.Model):
+    qesnum_id = models.AutoField(primary_key=True, db_column="qesnum_id")
+    form_id = models.ForeignKey(
+        Form, on_delete=models.CASCADE, related_name="qes_num", db_column="form_id"
+    )
+    default_que_num=models.IntegerField(null=False)
+    situation_que_num = models.IntegerField(null=False)
+    deep_que_num = models.IntegerField(null=False)
+    personality_que_num = models.IntegerField(null=False)
+    total_que_num = models.IntegerField(null=False)
+
+    class Meta:
+        db_table = "qes_num"
+

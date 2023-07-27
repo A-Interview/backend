@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from speak_to_chat.serializers import ResponseVoiceSerializer
 from users.models import User
-from .models import Form
+from .models import Form, Qes_Num
 
 
 class FormsSerializer(serializers.ModelSerializer):
@@ -27,4 +27,13 @@ class FormsPutSerializer(serializers.ModelSerializer):
         model = Form
         fields = ("sector_name", "job_name", "career", "resume")
 
+<<<<<<< HEAD
+=======
+class QesNumSerializer(serializers.ModelSerializer):
+    qesnum_id = serializers.ReadOnlyField()
+    class Meta:
+        model = Qes_Num
+        fields = '__all__'
+
+>>>>>>> main
 

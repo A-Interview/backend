@@ -63,29 +63,31 @@ class QnAview(APIView):
         question_object = Question.objects.filter(form_id=form_object)
 
         QnA = []
-        for i in range(0, len(question_object) - 1):  # ok
+        for i in range(0, len(question_object)):  # ok
+            question_id = question_object[i].question_id
+
             answer_object = Answer.objects.get(question_id=question_object[i])  # ok
 
             # 질문, 답변내용, 음성파일 가져오기
             question = question_object[i].content
             answer = answer_object.content
-            file_url = answer_object.recode_file
+            audio_file_url = answer_object.recode_file
 
             #s3로부터 음성파일 받아오기
-            record_data = self.get_record(file_url)
+            record_data = self.get_record(audio_file_url)
 
-            QnA.append({"question": question, "answer": answer, "record": record_data})
+            QnA.append({"question_id": question_id, "question": question, "answer": answer, "record": record_data})
 
         # QnA 리스트 JSON으로 변환
         QnA = {"QnA": QnA}
 
         return JsonResponse(QnA, status=status.HTTP_200_OK)
 
-    def get_record(self, file_url):
+    def get_record(self, audio_file_url):
 
-        # S3에서 파일을 가져옵니다.
-        parsed_url = urlparse(file_url)
-        file_key = parsed_url.path.lstrip("/")
+        # S3에서 audio_file_key를 가져오기
+        parsed_url = urlparse(audio_file_url)
+        audio_file_key = parsed_url.path.lstrip("/")
 
         # AWS SDK 클라이언트 생성:
         s3_client = boto3.client(
@@ -95,14 +97,14 @@ class QnAview(APIView):
         )
 
         try:
-            # 파일을 S3 버킷에서 가져오기
-            response = s3_client.get_object(Bucket=os.environ.get("AWS_STORAGE_BUCKET_NAME"), Key=file_key)
+            # 음성 파일 객체를 S3 버킷에서 가져오기
+            response = s3_client.get_object(Bucket=os.environ.get("AWS_STORAGE_BUCKET_NAME"), Key=audio_file_key)
 
-            # 파일 데이터 반환
-            file_data = response['Body'].read()
+            # 음성 파일 객체로부터 음성 파일 추출
+            audio_file = response['Body'].read()
 
-            # 파일 데이터를 Base64로 인코딩하여 문자열로 변환
-            encoded_data = base64.b64encode(file_data).decode('utf-8')
+            # 음성 파일을 Base64로 인코딩하여 문자열로 변환
+            encoded_data = base64.b64encode(audio_file).decode('utf-8')
 
             return encoded_data
 
