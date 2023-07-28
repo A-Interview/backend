@@ -552,101 +552,116 @@ class InterviewConsumer(WebsocketConsumer):
         return question
         
     # 상황 면접 튜닝
+    # def situation_interview_tuning(self, selector_name, job_name, career):
+    #     self.conversation = [
+    #         {
+    #             "role": "system",
+    #             "content": f"""From now on, you are acting as a job interviewer. Please create a different question every time for an applicant with {career} experience to find out how to deal with a possible problem situation while working as {selector_name} to {job_name}. Generate only one question at a time and don't give an evaluation or your opinion other than the question. Don't answer the question. Create a new question for each question. Make sure to create questions in Korean."""
+    #         },
+    #     ]
     def situation_interview_tuning(self, selector_name, job_name, career):
-        self.conversation = []
-        self.conversation.append(
-            {
-                "role": "system",
-                "content": 'function_name: [situation_interview] rule: [Act as an interviewer for a company. For example, if the question asks, "What would you do if your boss gives an unfair work order?" the answer is, "I refuse because I can\'t do anything unfair." Ask questions about the applicant\'s ability to cope with the situation]'
-                + "function_name: [default] rule: [You should provide only one question at a time. You should not ask questions that have been asked before. You must speak only in Korean during the interview.]"
-                + 'function_name: [onlyAnswer] rule: [Don\'t say anything other than a question]'
-            }
-        )
-        self.conversation.append(
-            {
-                "role": "assistant",
-                "content" : "All users are unable to connect due to a sudden problem with the database of the web application being used by the company. What steps will you follow to resolve this issue?"
-            }
-        )
-        self.conversation.append(
-            {
-                "role": "user",
-                "content": "First, check log files and server monitoring to determine the cause of the error. Next, verify that the database server is operating correctly, and restart or restart the database service if there are any problems. If this doesn't solve the problem, check your backend code and queries to fix and optimize bad queries or inefficient code. And if the problem is system-wide, it checks for server resource shortages and takes the necessary action."
-            },
-        )
-        self.conversation.append(
-            {
-                "role": "assistant",
-                "content": "You want to add a new index to the database server. Anticipate how this will affect the performance of your web application, and what to consider when adding indexes?"
-            },
-        )
-        self.conversation.append(
-            {
-                "role": "user",
-                "content": "Adding indexes is expected to improve database lookup performance. This can improve performance, especially for queries that retrieve large amounts of data. However, indexes can incur performance penalties when inserting, modifying, or deleting data, so you need to take this into account. When adding indexes, choose frequently used search fields and be careful not to create duplicate indexes. Additionally, it is important to keep database statistics updated to maintain optimal execution plans."
-            }
-        )
-        self.conversation.append(
-            {
-                "role": "assistant",
-                "content": "For added security, we want to store the user's password using a one-way hash function. Which hash function to choose and what to consider when applying a hash function?"
-            }
-        )
-        self.conversation.append(
-            {
-                "role": "user",
-                "content": "Session and token-based authentication methods each have their pros and cons, so you should choose one that suits your situation. Session-based authentication uses more resources on the server side as it maintains state on the server. On the other hand, token-based authentication maintains state on the client, which can reduce server load. Also, tokens are often JSON Web Tokens (JWTs), which provide signed tokens that cannot be changed on the client. However, the token must be managed securely, and the expiration time and renewal method must be carefully set."
-            }
-        )
-        self.conversation.append(
-            {
-                "role": "system",
-                "content": "situation_interview(Company="
-                + selector_name
-                + ", Job="
-                + job_name
-                + ", Career="
-                + career
-                + ")"
-                + "default()"
-                + "onlyAnswer()"
-            }
-        )
-    
-    # 심층 면접 튜닝 
+        situation_interview = f'situation_interview(Company="{selector_name}", Job="{job_name}", Career="{career}")'
+        default = "default()"
+
+    content = (
+        'function_name: [situation_interview] input: ["sector", "job", "career"] rule: [You are an expert in recruitment and interviewer specializing in finding the best talent. Ask questions that can judge my ability to cope with situations based “job” and ask one question at a time. For example, let\'s say company = IT company, job = web front-end developer, career = newcomer. Then you can recognize that I am a newbie applying to an IT company as a web front-end developer. And you can ask questions that fit this information. Such as "You have been assigned to work on a project where the design team has provided you with a visually appealing but intricate UI design for a web page. As you start implementing it, you realize that some of the design elements may not be feasible to achieve with the current technology or may negatively impact the performance. How would you handle this situation?". Do not ask this example question.]'
+        + "function_name: [default] rule: [You should keep creating new questions creatively. You should never ask the same or similar questions before you generate at least 100 different questions. and ask one question at a time. You must speak only in Korean during the interview. from now on, You can only ask questions. You can't answer.]"
+        + situation_interview
+        + default
+    )
+
+self.conversation.append(
+    {
+        "role": "assistant",
+        "content": "What would you do if your boss gives an unfair work order?"
+    }
+)
+
+self.conversation.append(
+    {
+        "role": "user",
+        "content": "불공정한 업무 지시를 받았다면, 상사와 원활한 소통을 통해 이해를 요청하거나 거절하고 대안을 제시할 것입니다. 조직에 영향을 미칠 경우 상사와 협의하여 해결책을 모색할 것입니다."
+    }
+)
+
+self.conversation.append(
+    {
+        "role": "assistant",
+        "content": "If the workload is too heavy and challenging, or if the tasks don't align with your skills, what would you do?"
+    }
+)
+
+self.conversation.append(
+    {
+        "role": "user",
+        "content": "먼저 문제를 상사와 솔직하게 이야기할 것입니다. 업무 부담을 줄이기 위해 우선순위를 정하고 필요한 도움을 요청할 수 있습니다. 또한 새로운 기술을 습득하여 업무에 대응할 준비를 할 수 있습니다."
+    }
+)
+
+
+
+
     def deep_interview_tuning(self, selector_name, job_name, career, resume):
+        interviewee_info = f'interviewee_info(Company="{selector_name}", Job="{job_name}", Career="{career}")'
+        self_introduction = f'self_introduction("{resume}")'
+        aggressive_position = "aggressive_position()"
+
+        content = (
+            'function_name: [interviewee_info] input: ["Company", "Job", "Career"] rule: [Please act as a skillful interviewer. We will provide the input form including "Company," "Professional," and "Career." Look at the sentences "Company," "Job," and "Career" to get information about me as an interview applicant. For example, let\'s say company = IT company, job = web front-end developer, experience = newcomer. Then you can recognize that you\'re a newbie applying to an IT company as a web front-end developer. And you can ask questions that fit this information. You must speak only in Korean during the interview. You can only ask questions. You can\'t answer.]'
+            + 'function_name: [aggressive_position] rule: [Ask me questions in a tail-to-tail manner about what I answer. There may be technical questions about the answer, and there may be questions that you, as an interviewer, would dig into the answer.. For example, if the question asks, "What\'s your web framework?" the answer is, "It is React framework." So the new question is, "What do you use as a state management tool in React, and why do you need this?" It should be the same question. If you don\'t have any more questions, move on to the next topic.] '
+            + f'function_name: [self_introduction] input : ["self-introduction"] rule: [We will provide an input form including a "self-introduction." Read this "self-introduction" and extract the content to generate a question. just ask one question. Don\'t ask too long questions. The question must have a definite purpose. and Just ask one question at a time.'
+            + interviewee_info
+            + self_introduction
+            + aggressive_position
+        )
+
         self.conversation = [
             {
-                "role": "system",
-                "content": 'Resume: ' 
-                + str(resume)
+                "role": "user",
+                "content": content
             },
             {
-                "role": "system",
-                "content": 'function_name: [deep_interview], Company: ' 
-                + str(selector_name) 
-                + ', Job: ' 
-                + str(job_name) 
-                + ', Career: ' 
-                + str(career) 
-                + ', Rule: [ You play the role of a strict and skillful interviewer for the company. For example, if the question asks, "What was the most difficult project or task at your previous job?" the answer is, "The most challenging task was planning and executing a marketing strategy for a product launch." The interviewer can then ask follow-up questions based on this answer. "What was the biggest challenge in that project? How did you overcome it?" or  "What was your role in that project? What results did you achieve?" Pressure applicants and evaluate their thinking skills, problem-solving skills, communication skills, honesty and integrity, reflection and learning skills.]'
+                "role": "assistant", 
+                "content": f"{job_name} 역할을 맡았을 때 가장 어려웠던 점은 무엇이었나요?"
             },
             {
-                "role": "system",
-                "content": "function_name: [default], Rule: [You should provide only one question at a time. You should not ask questions that have been asked before. You must speak only in Korean during the interview.]"
+                "role": "user", 
+                "content": "이전 직장에서 데이터 이전 프로젝트를 맡았었는데, 상당히 도전적이었습니다."
             },
             {
-                "role": "system",
-                "content": 'function_name: [onlyAnswer], Rule: [Don\'t say anything other than a question. You must speak only in Korean during the interview. Don\'t ask duplicate questions. Don\'t ask questions about the examples I\'ve presented, just refer to them.]'
+                "role": "assistant",
+                "content": "흥미롭군요. 그 프로젝트가 특별히 어려웠던 이유는 무엇인가요?"
             },
-            {"role": "assistant", "content": "Can you tell me about a challenging project you've worked on in the past based on your resume?"},
-            {"role": "user", "content": "Sure, I worked on a data migration project at my previous job. It was quite challenging."},
-            {"role": "assistant", "content": "That sounds interesting. What made this data migration project particularly challenging?"},
-            {"role": "user", "content": "The project required us to migrate a large amount of data from an old system to a new one, and there were a lot of technical difficulties."},
-            {"role": "assistant to=deep_interview", "content": "I see. Can you describe some of the technical difficulties and how you addressed them?"}
-        ]
+            {
+                "role": "user", 
+                "content": "그 프로젝트는 우리가 오래된 시스템에서 새로운 시스템으로 대량의 데이터를 이전해야 했고, 기술적인 어려움이 많았습니다."
+            },
+            {
+                "role": "assistant", 
+                "content": "어떤 기술적인 어려움이 있었고 그것을 어떻게 해결했는지 설명해 주실 수 있나요?"
+            },
+    ]
 
 
+        
+            # {"role": "assistant", "content": ""},
+            # {"role": "user", "content": ""},
+            # {"role": "assistant", "content": ""},
+
+            # {"role": "assistant", "content": ""},
+            # {"role": "user", "content": ""},
+            # {"role": "assistant", "content": ""},
+
+            # {"role": "assistant", "content": ""},
+            # {"role": "user", "content": ""},
+            # {"role": "assistant", "content": ""},
+
+
+
+
+        
+
+    # 성향 면접 튜닝
     def personal_interview_tuning(self):
         self.conversation = [
             {
