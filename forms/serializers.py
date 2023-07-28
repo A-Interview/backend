@@ -27,13 +27,10 @@ class FormsPutSerializer(serializers.ModelSerializer):
         model = Form
         fields = ("sector_name", "job_name", "career", "resume")
 
-<<<<<<< HEAD
-=======
 class QesNumSerializer(serializers.ModelSerializer):
     qesnum_id = serializers.ReadOnlyField()
     class Meta:
         model = Qes_Num
         fields = '__all__'
 
->>>>>>> main
 

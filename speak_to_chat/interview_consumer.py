@@ -613,6 +613,7 @@ class InterviewConsumer(WebsocketConsumer):
             }
         )
     
+    # 심층 면접 튜닝 
     def deep_interview_tuning(self, selector_name, job_name, career, resume):
         self.conversation = [
             {
@@ -620,11 +621,6 @@ class InterviewConsumer(WebsocketConsumer):
                 "content": 'Resume: ' 
                 + str(resume)
             },
-            {
-                "role": "assistant",
-                "content": 'According to your resume, you worked on a significant data migration project in your previous role. Can you elaborate on that?'
-            },
-            {"role": "user", "content": "Sure, it was a complex project that required careful planning and execution."},
             {
                 "role": "system",
                 "content": 'function_name: [deep_interview], Company: ' 
@@ -641,10 +637,15 @@ class InterviewConsumer(WebsocketConsumer):
             },
             {
                 "role": "system",
-                "content": 'function_name: [onlyAnswer], Rule: [Don\'t say anything other than a question]'
+                "content": 'function_name: [onlyAnswer], Rule: [Don\'t say anything other than a question. You must speak only in Korean during the interview. Don\'t ask duplicate questions. Don\'t ask questions about the examples I\'ve presented, just refer to them.]'
             },
-            {"role": "assistant", "content": "That sounds quite challenging. Could you share the major difficulties you faced during this project and how you overcame them?"}
-    ]
+            {"role": "assistant", "content": "Can you tell me about a challenging project you've worked on in the past based on your resume?"},
+            {"role": "user", "content": "Sure, I worked on a data migration project at my previous job. It was quite challenging."},
+            {"role": "assistant", "content": "That sounds interesting. What made this data migration project particularly challenging?"},
+            {"role": "user", "content": "The project required us to migrate a large amount of data from an old system to a new one, and there were a lot of technical difficulties."},
+            {"role": "assistant to=deep_interview", "content": "I see. Can you describe some of the technical difficulties and how you addressed them?"}
+        ]
+
 
     def personal_interview_tuning(self):
         self.conversation = [
