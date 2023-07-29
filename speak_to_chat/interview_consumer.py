@@ -560,47 +560,59 @@ class InterviewConsumer(WebsocketConsumer):
     #         },
     #     ]
     def situation_interview_tuning(self, selector_name, job_name, career):
-        situation_interview = f'situation_interview(Company="{selector_name}", Job="{job_name}", Career="{career}")'
-        default = "default()"
+        self.conversation = []
+        self.conversation.append(
+            {
+                "role": "system",
+                "content": 'function_name: [situation_interview] rule: [Act as an interviewer for a company. For example, if the question asks, "What would you do if your boss gives an unfair work order?" the answer is, "I refuse because I can\'t do anything unfair."Examples of questions are as follows."All users are unable to connect due to a sudden problem with the database of the web application being used by the company. What steps will you follow to resolve this issue?", "You want to add a new index to the database server. Anticipate how this will affect the performance of your web application, and what to consider when adding indexes?", "For added security, we want to store the user\'s password using a one-way hash function. Which hash function to choose and what to consider when applying a hash function?". Ask me a question that evaluates my ability to cope with this particular situation. The objective is to predict how the interviewee will behave in real-world work situations. For example, assess problem-solving skills, leadership, teamwork, and conflict resolution skills. And evaluate how you deal with unexpected or stressful situations. This is important for fast-acting tasks such as changing work environments or customer service. Evaluate the interviewer\'s values or ethical judgment through a situational interview.  And identify the interviewee\'s problem-solving methods and evaluate their creative and critical thinking skills.]'
+                + "function_name: [default] rule: [Please refer to the previously provided examples when asking your question. It would be preferred if the situation question is related to the job. Only one question should be presented at a time. Do not ask a question that is similar to the previous one. You must not repeat a question that has been asked before. During the interview, you must only speak in Korean.]"
+                + 'function_name: [onlyAnswer] rule: [Don\'t say anything other than a question]'
+            }
+        )
+        self.conversation.append(
+            {
+                "role": "system",
+                "content": "situation_interview(Company="
+                + selector_name
+                + ", Job="
+                + job_name
+                + ", Career="
+                + career
+                + ")"
+                + "default()"
+                + "onlyAnswer()"
+            }
+        )
+        self.conversation.append(
+            {
+                "role": "assistant",
+                "content": "당신의 상사가 불공정한 업무 지시를 한다면 어떻게 하실건가요?"
+            }
+        )
 
-    content = (
-        'function_name: [situation_interview] input: ["sector", "job", "career"] rule: [You are an expert in recruitment and interviewer specializing in finding the best talent. Ask questions that can judge my ability to cope with situations based “job” and ask one question at a time. For example, let\'s say company = IT company, job = web front-end developer, career = newcomer. Then you can recognize that I am a newbie applying to an IT company as a web front-end developer. And you can ask questions that fit this information. Such as "You have been assigned to work on a project where the design team has provided you with a visually appealing but intricate UI design for a web page. As you start implementing it, you realize that some of the design elements may not be feasible to achieve with the current technology or may negatively impact the performance. How would you handle this situation?". Do not ask this example question.]'
-        + "function_name: [default] rule: [You should keep creating new questions creatively. You should never ask the same or similar questions before you generate at least 100 different questions. and ask one question at a time. You must speak only in Korean during the interview. from now on, You can only ask questions. You can't answer.]"
-        + situation_interview
-        + default
-    )
+        self.conversation.append(
+            {
+                "role": "user",
+                "content": "불공정한 업무 지시를 받았다면, 상사와 원활한 소통을 통해 이해를 요청하거나 거절하고 대안을 제시할 것입니다. 조직에 영향을 미칠 경우 상사와 협의하여 해결책을 모색할 것입니다."
+            }
+        )
 
-self.conversation.append(
-    {
-        "role": "assistant",
-        "content": "What would you do if your boss gives an unfair work order?"
-    }
-)
+        self.conversation.append(
+            {
+                "role": "assistant",
+                "content": "만약에 업무부담이 너무 많고 자신의 기술가 맞지 않을 경우에는 어떻게 하실건가요?"
+            }
+        )
 
-self.conversation.append(
-    {
-        "role": "user",
-        "content": "불공정한 업무 지시를 받았다면, 상사와 원활한 소통을 통해 이해를 요청하거나 거절하고 대안을 제시할 것입니다. 조직에 영향을 미칠 경우 상사와 협의하여 해결책을 모색할 것입니다."
-    }
-)
-
-self.conversation.append(
-    {
-        "role": "assistant",
-        "content": "If the workload is too heavy and challenging, or if the tasks don't align with your skills, what would you do?"
-    }
-)
-
-self.conversation.append(
-    {
-        "role": "user",
-        "content": "먼저 문제를 상사와 솔직하게 이야기할 것입니다. 업무 부담을 줄이기 위해 우선순위를 정하고 필요한 도움을 요청할 수 있습니다. 또한 새로운 기술을 습득하여 업무에 대응할 준비를 할 수 있습니다."
-    }
-)
+        self.conversation.append(
+            {
+                "role": "user",
+                "content": "먼저 문제를 상사와 솔직하게 이야기할 것입니다. 업무 부담을 줄이기 위해 우선순위를 정하고 필요한 도움을 요청할 수 있습니다. 또한 새로운 기술을 습득하여 업무에 대응할 준비를 할 수 있습니다. \n"
+            }
+            )
 
 
-
-
+    # 심층 면접 튜닝
     def deep_interview_tuning(self, selector_name, job_name, career, resume):
         interviewee_info = f'interviewee_info(Company="{selector_name}", Job="{job_name}", Career="{career}")'
         self_introduction = f'self_introduction("{resume}")'
@@ -609,7 +621,7 @@ self.conversation.append(
         content = (
             'function_name: [interviewee_info] input: ["Company", "Job", "Career"] rule: [Please act as a skillful interviewer. We will provide the input form including "Company," "Professional," and "Career." Look at the sentences "Company," "Job," and "Career" to get information about me as an interview applicant. For example, let\'s say company = IT company, job = web front-end developer, experience = newcomer. Then you can recognize that you\'re a newbie applying to an IT company as a web front-end developer. And you can ask questions that fit this information. You must speak only in Korean during the interview. You can only ask questions. You can\'t answer.]'
             + 'function_name: [aggressive_position] rule: [Ask me questions in a tail-to-tail manner about what I answer. There may be technical questions about the answer, and there may be questions that you, as an interviewer, would dig into the answer.. For example, if the question asks, "What\'s your web framework?" the answer is, "It is React framework." So the new question is, "What do you use as a state management tool in React, and why do you need this?" It should be the same question. If you don\'t have any more questions, move on to the next topic.] '
-            + f'function_name: [self_introduction] input : ["self-introduction"] rule: [We will provide an input form including a "self-introduction." Read this "self-introduction" and extract the content to generate a question. just ask one question. Don\'t ask too long questions. The question must have a definite purpose. and Just ask one question at a time.'
+            + f'function_name: [self_introduction] input : ["self-introduction"] rule: [We will provide an input form including a "self-introduction." Read this "self-introduction" and extract the content to generate a question. just ask one question. Don\'t ask too long questions. The question must have a definite purpose. and Just ask one question at a time.]'
             + interviewee_info
             + self_introduction
             + aggressive_position
